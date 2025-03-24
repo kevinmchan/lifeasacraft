@@ -22,6 +22,7 @@ const isLoading = ref(true);
 const error = ref<string | null>(null);
 const newMessage = ref('');
 const socket = ref<WebSocket | null>(null);
+const username = ref<string>('kevin');  // TODO: Replace with dynamic user profile
 const connectionStatus = ref<'connected' | 'disconnected' | 'connecting'>('disconnected');
 
 async function fetchConversation() {
@@ -103,7 +104,7 @@ function sendMessage() {
   
   const message: Message = {
     role: 'user',
-    agent: 'user', // You might want to dynamically set this
+    agent: username.value,
     content: newMessage.value,
     timestamp: new Date().toISOString()
   };
