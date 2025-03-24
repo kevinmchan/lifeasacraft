@@ -33,7 +33,9 @@ npm run dev
 
 2. Remove boilerplate template files.
 
-3. 
+3. Build chat interface
+
+4. Load conversation on component creation, using api endpoint
 
 ### Backend
 
@@ -46,3 +48,4 @@ uv add fastapi --extra standard
 uv add openapi
 ```
 
+2. Create endpoint to get conversation data

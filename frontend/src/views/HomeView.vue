@@ -9,3 +9,9 @@
     </div>
   </main>
 </template>
+
+<style scoped>
+.wrapper {
+  padding: 1rem;
+}
+</style>
