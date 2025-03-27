@@ -9,8 +9,8 @@ import { RouterLink, RouterView } from 'vue-router'
         <div>lifeasacraft</div>
       </RouterLink>
       <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/convo">Conversations</RouterLink>
+        <RouterLink to="/" class="link">Home</RouterLink>
+        <RouterLink to="/projects" class="link">Projects</RouterLink>
       </nav>
     </div>
   </header>
@@ -23,28 +23,26 @@ import { RouterLink, RouterView } from 'vue-router'
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 1rem;
+  padding: 0.5rem 0;
 }
 
 .logo {
-  font-weight: 100;
+  font-weight: light;
+  font-family: 'roboto-mono', monospace;
   font-size: 1.5rem;
-  padding: 0.25rem 1rem;
   margin: 0.5rem 0;
-  border-radius: 0.5rem;
-  border: 1px solid var(--vt-c-green);
   color: inherit;
 }
 
 .logo:hover {
-  background-color: var(--vt-c-green);
-  color: white;
   cursor: pointer;
+  background-color: inherit;
 }
 
+.link {
+  padding: 0 1rem;
+}
 nav {
   display: flex;
-  gap: 1rem;
-  padding: 0.5rem;
 }
 </style>

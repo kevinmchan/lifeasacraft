@@ -1,17 +1,20 @@
-<script setup lang="ts">
-</script>
+<script setup lang="ts"></script>
 
 <template>
   <main>
     <div class="wrapper">
-      <h1>Home</h1>
-      <p>Welcome to the home page!</p>
+      <h1>Welcome to lifeasacraft!</h1>
     </div>
   </main>
 </template>
 
 <style scoped>
+main {
+  height: 100%;
+}
 .wrapper {
-  padding: 1rem;
+  display: flex;
+  height: 100%;
+  align-items: center;
 }
 </style>
