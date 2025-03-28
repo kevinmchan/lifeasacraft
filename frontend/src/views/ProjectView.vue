@@ -133,29 +133,56 @@ onBeforeUnmount(() => {
     socket.value.close()
   }
 })
+
+function formatTimestamp(timestamp: string): string {
+  // Ensure timestamp is treated as UTC if it doesn't have timezone info
+  const utcTimestamp = timestamp.endsWith('Z') ? timestamp : timestamp + 'Z'
+
+  // If timestamp is current day in local time zone, format it as 'HH:mm'
+  const currentDate = new Date()
+  const messageDate = new Date(utcTimestamp)
+  if (
+    messageDate.getUTCFullYear() === currentDate.getUTCFullYear() &&
+    messageDate.getUTCMonth() === currentDate.getUTCMonth() &&
+    messageDate.getUTCDate() === currentDate.getUTCDate()
+  ) {
+    return new Date(utcTimestamp).toLocaleString('en-GB', {
+      timeStyle: 'short',
+      hour12: true,
+    })
+  }
+  // Otherwise, format it as 'dd MMM yyyy, HH:mm'
+  return new Date(utcTimestamp).toLocaleString('en-GB', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    hour12: true,
+  })
+}
 </script>
 
 <template>
   <div class="conversation">
-    <div class="status">
-      <div v-if="projectStore.isLoading" class="loading">Loading conversation data...</div>
-      <div v-else-if="projectStore.error" class="error">Error: {{ projectStore.error }}</div>
-      <div v-else class="status-indicator" :class="connectionStatus">
-        Connection: {{ connectionStatus }}
+    <div class="title-bar">
+      <h1>{{ currentProject?.title }}</h1>
+      <div class="status">
+        <div v-if="projectStore.isLoading" class="loading">Loading conversation data...</div>
+        <div v-else-if="projectStore.error" class="error">Error: {{ projectStore.error }}</div>
+        <div v-else class="status-indicator" :class="connectionStatus">
+          {{ connectionStatus }}
+        </div>
       </div>
     </div>
     <div class="messages">
-      <h1>{{ currentProject?.title }}</h1>
       <div
         v-for="(message, index) in currentProject?.messages"
         :key="index"
         :class="['message', message.agent_role]"
       >
         <div class="metadata">
-          <span class="agent">{{ message.agent_name }}</span>
-          <span>|</span>
-          <span class="timestamp">{{ new Date(message.timestamp).toLocaleTimeString() }}</span>
+          <div class="agent">@{{ message.agent_name }}</div>
+          <div class="timestamp">{{ formatTimestamp(message.timestamp) }}</div>
         </div>
+        <!-- TODO: Fix rendering to display markdown -->
         <div class="content">{{ message.content }}</div>
       </div>
     </div>
@@ -173,16 +200,19 @@ onBeforeUnmount(() => {
 </template>
 
 <style>
+.agent {
+  font-weight: bold;
+}
+
+.timestamp {
+  font-size: 0.7rem;
+  color: grey;
+  align-self: flex-start;
+}
+
 .conversation {
   display: flex;
   flex-direction: column;
-  width: 100%;
-  height: 100%;
-  overflow-y: hidden;
-}
-
-.status {
-  padding: 1rem;
 }
 
 .messages {
@@ -190,8 +220,7 @@ onBeforeUnmount(() => {
   flex-direction: column;
   overflow-y: scroll;
   gap: 1rem;
-  border-radius: 0.5rem;
-  padding: 1rem;
+  margin: 1rem 0;
   width: 100%;
   align-self: center;
 }
@@ -200,12 +229,16 @@ onBeforeUnmount(() => {
   width: 100%;
   display: flex;
   gap: 1rem;
-  padding: 1rem;
+  border: #555 1px solid;
+  padding: 0.5rem;
+  margin: 0.5rem 0;
 }
 
 .metadata {
   display: flex;
   gap: 0.5rem;
+  justify-content: space-between;
+  padding: 0 0 0.5rem 0;
 }
 
 textarea {
@@ -213,6 +246,7 @@ textarea {
   padding: 0.5rem;
   background-color: black;
   color: white;
+  border: none;
 }
 
 button {
@@ -222,10 +256,18 @@ button {
   cursor: pointer;
 }
 
+.title-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #555;
+}
+
 .status-indicator {
   padding: 4px 8px;
   font-size: 0.8rem;
   color: white;
+  border-radius: 1rem 0 0 1rem;
 }
 
 .status-indicator.connected {
@@ -243,7 +285,7 @@ button {
 .message {
   padding: 10px;
   border-radius: 0.5rem;
-  border: grey 1px solid;
+  /* border: grey 1px solid; */
 }
 .message.user {
   background-color: #000;

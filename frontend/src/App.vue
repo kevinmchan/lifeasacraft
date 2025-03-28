@@ -14,11 +14,18 @@ import { RouterLink, RouterView } from 'vue-router'
       </nav>
     </div>
   </header>
-
-  <RouterView />
+  <div class="main">
+    <RouterView />
+  </div>
 </template>
 
 <style scoped>
+.main {
+  padding: 0.25rem;
+  display: flex;
+  height: 100%;
+  overflow-y: hidden;
+}
 .wrapper {
   display: flex;
   justify-content: space-between;
@@ -27,7 +34,7 @@ import { RouterLink, RouterView } from 'vue-router'
 }
 
 .logo {
-  font-weight: light;
+  font-weight: bold;
   font-family: 'roboto-mono', monospace;
   font-size: 1.5rem;
   margin: 0.5rem 0;

@@ -12,7 +12,16 @@ onMounted(async () => {
 
 <template>
   <div>
-    <h1>Projects</h1>
+    <div class="header">
+      <h1>Projects</h1>
+      <div>
+        <router-link to="/projects/new" custom v-slot="{ navigate }">
+          <button class="button-new" @click="navigate" @keyup.enter="() => navigate()">
+            New Project
+          </button>
+        </router-link>
+      </div>
+    </div>
     <div v-if="projectStore.isLoading" class="loading">Loading projects...</div>
     <div v-else-if="projectStore.error" class="error">Error: {{ projectStore.error }}</div>
     <div v-else class="project-grid">
@@ -21,7 +30,8 @@ onMounted(async () => {
           <div
             class="project"
             @click="navigate"
-            @keyup.enter="() => navigate()"
+            @keydown.enter="() => navigate()"
+            @keydown.space="() => navigate()"
             role="link"
             tabindex="0"
           >
@@ -35,6 +45,20 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.button-new {
+  background-color: var(--vt-c-green);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+}
+
 .project-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -43,7 +67,6 @@ onMounted(async () => {
 
 .project-container {
   padding: 1rem;
-  border-radius: 0.5rem;
   border: 1px solid var(--vt-c-green);
   color: inherit;
   cursor: pointer;
