@@ -4,6 +4,8 @@ import { useRoute } from 'vue-router'
 import { useProjectStore } from '@/stores/project'
 import { type Agent, type Message, type Project } from '@/types'
 
+// TODO: Refactor to extract components and socket logic
+
 const projectStore = useProjectStore()
 const user: Agent = {
   // TODO: dynamically set user
@@ -16,7 +18,12 @@ const user: Agent = {
 const currentProject = ref<Project | null>(null)
 const newMessage = ref<string>('')
 const socket = ref<WebSocket | null>(null)
-const connectionStatus = ref<'connected' | 'disconnected' | 'connecting'>('disconnected')
+const connectionStatus = ref<'connected' | 'disconnected' | 'connecting' | 'reconnecting'>(
+  'disconnected',
+)
+const maxReconnectAttempts = ref(5)
+const currentReconnectAttempt = ref(0)
+const reconnectTimer = ref<number | null>(null)
 
 function scrollToBottom() {
   setTimeout(() => {
@@ -27,8 +34,15 @@ function scrollToBottom() {
   }, 50)
 }
 
-function connectWebSocket() {
-  connectionStatus.value = 'connecting'
+function connectWebSocket(isReconnect = false) {
+  if (isReconnect) {
+    connectionStatus.value = 'reconnecting'
+  } else {
+    connectionStatus.value = 'connecting'
+    // Reset reconnect attempts on fresh connects
+    currentReconnectAttempt.value = 0
+  }
+
   socket.value = new WebSocket(`ws://localhost:8000/chat/${currentProject.value?.id}/ws`)
 
   socket.value.onopen = () => {
@@ -77,9 +91,24 @@ function connectWebSocket() {
     connectionStatus.value = 'disconnected'
   }
 
-  socket.value.onclose = () => {
-    console.log('WebSocket connection closed')
+  socket.value.onclose = (event) => {
+    console.log('WebSocket connection closed', event)
     connectionStatus.value = 'disconnected'
+
+    // Don't attempt to reconnect if we closed intentionally
+    if (!event.wasClean && currentReconnectAttempt.value < maxReconnectAttempts.value) {
+      const delay = Math.min(1000 * Math.pow(2, currentReconnectAttempt.value), 30000)
+      console.log(`Attempting to reconnect in ${delay / 1000} seconds...`)
+
+      // Clear any existing timer
+      if (reconnectTimer.value) window.clearTimeout(reconnectTimer.value)
+
+      // Set new reconnect timer with exponential backoff
+      reconnectTimer.value = window.setTimeout(() => {
+        currentReconnectAttempt.value++
+        connectWebSocket(true)
+      }, delay)
+    }
   }
 }
 
@@ -94,6 +123,8 @@ function sendMessage() {
     agent_name: user.name,
     timestamp: new Date().toISOString(),
   }
+
+  // TODO: consider if we should be broadcasting to all clients; currently, this is a single-user chat
 
   // Add to local conversation immediately
   currentProject.value?.messages.push(message)
@@ -213,6 +244,8 @@ function formatTimestamp(timestamp: string): string {
 .conversation {
   display: flex;
   flex-direction: column;
+  width: 100%;
+  height: 100%;
 }
 
 .messages {
@@ -222,6 +255,7 @@ function formatTimestamp(timestamp: string): string {
   gap: 1rem;
   margin: 1rem 0;
   width: 100%;
+  height: 100%;
   align-self: center;
 }
 
