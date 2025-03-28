@@ -46,6 +46,7 @@ class Message(SQLModel, table=True):
 
     id: str = Field(primary_key=True, default_factory=generate_uuid)
     content: str
+    content_assistant_view: str
     agent_role: str
     agent_name: str
     agent_model: str

@@ -18,6 +18,7 @@ class MessageRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     content: str
+    content_assistant_view: str
     agent_name: str
     agent_role: supported_roles
     agent_model: supported_models
@@ -30,6 +31,7 @@ class Message(BaseModel):
 
     id: str
     content: str
+    content_assistant_view: str
     agent_name: str
     agent_role: supported_roles
     agent_model: supported_models

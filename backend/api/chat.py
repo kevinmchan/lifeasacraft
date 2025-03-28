@@ -123,7 +123,7 @@ async def websocket_endpoint(
                 messages=[  # type: ignore
                     {
                         "role": message.agent_role,
-                        "content": message.content,
+                        "content": message.content_assistant_view,
                     }
                     for message in messages
                 ],
