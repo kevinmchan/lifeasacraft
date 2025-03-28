@@ -28,8 +28,19 @@ class ConnectionManager:
         self.active_connections.append(websocket)
 
     async def disconnect(self, websocket: WebSocket, code: int = 1000):
-        await websocket.close(code=code)
-        self.active_connections.remove(websocket)
+        try:
+            await websocket.close(code=code)
+        except RuntimeError as e:
+            # Connection is already closed, just log it
+            if "already completed" in str(e) or "websocket.close" in str(e):
+                print("Info: Connection was already closed")
+            else:
+                # Some other RuntimeError
+                print(f"Error closing websocket: {e}")
+
+        # Always remove from active connections
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
 
     async def send_personal_message(self, message: str, websocket: WebSocket):
         await websocket.send_text(message)
@@ -138,4 +149,5 @@ async def websocket_endpoint(
             await manager.broadcast(message.model_dump_json())
 
     except WebSocketDisconnect:
+        # TODO: Consider refactoring so we're not trying to close the already closed connection and just remove from active list
         await manager.disconnect(websocket)
