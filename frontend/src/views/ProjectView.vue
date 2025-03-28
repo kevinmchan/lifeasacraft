@@ -34,6 +34,22 @@ function scrollToBottom() {
   }, 50)
 }
 
+function handleReconnect() {
+  if (currentReconnectAttempt.value < maxReconnectAttempts.value) {
+    const delay = Math.min(1000 * Math.pow(2, currentReconnectAttempt.value), 30000)
+    console.log(`Attempting to reconnect in ${delay / 1000} seconds...`)
+
+    // Clear any existing timer
+    if (reconnectTimer.value) window.clearTimeout(reconnectTimer.value)
+
+    // Set new reconnect timer with exponential backoff
+    reconnectTimer.value = window.setTimeout(() => {
+      currentReconnectAttempt.value++
+      connectWebSocket(true)
+    }, delay)
+  }
+}
+
 function connectWebSocket(isReconnect = false) {
   if (isReconnect) {
     connectionStatus.value = 'reconnecting'
@@ -89,26 +105,13 @@ function connectWebSocket(isReconnect = false) {
   socket.value.onerror = (error) => {
     console.error('WebSocket error:', error)
     connectionStatus.value = 'disconnected'
+    handleReconnect()
   }
 
   socket.value.onclose = (event) => {
     console.log('WebSocket connection closed', event)
     connectionStatus.value = 'disconnected'
-
-    // Don't attempt to reconnect if we closed intentionally
-    if (!event.wasClean && currentReconnectAttempt.value < maxReconnectAttempts.value) {
-      const delay = Math.min(1000 * Math.pow(2, currentReconnectAttempt.value), 30000)
-      console.log(`Attempting to reconnect in ${delay / 1000} seconds...`)
-
-      // Clear any existing timer
-      if (reconnectTimer.value) window.clearTimeout(reconnectTimer.value)
-
-      // Set new reconnect timer with exponential backoff
-      reconnectTimer.value = window.setTimeout(() => {
-        currentReconnectAttempt.value++
-        connectWebSocket(true)
-      }, delay)
-    }
+    handleReconnect()
   }
 }
 
