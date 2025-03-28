@@ -124,12 +124,11 @@ function sendMessage() {
     timestamp: new Date().toISOString(),
   }
 
-  // TODO: consider if we should be broadcasting to all clients; currently, this is a single-user chat
-
   // Add to local conversation immediately
   currentProject.value?.messages.push(message)
 
   // Send to server
+  // TODO: BUG - user submitted messages doesn't get broadcasted to other clients, but the other clients receive the server (assistant) response
   socket.value.send(JSON.stringify(message))
 
   // Clear input
