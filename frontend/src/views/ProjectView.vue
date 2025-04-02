@@ -220,6 +220,7 @@ function formatTimestamp(timestamp: string): string {
       </div>
     </div>
     <div class="input">
+      <!-- TODO: Figure out why textarea clears after a certain amount of time-->
       <textarea
         id="message-input"
         v-model="newMessage"
