@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 import { useProjectStore } from '@/stores/project'
 import { type Agent, type Message, type Project } from '@/types'
+import { marked } from 'marked'
+import DOMPurify from 'dompurify'
+import { options } from 'marked'
 
 // TODO: Refactor to extract components and socket logic
 // TODO: Add additional logging
@@ -25,6 +28,12 @@ const connectionStatus = ref<'connected' | 'disconnected' | 'connecting' | 'reco
 const maxReconnectAttempts = ref(5)
 const currentReconnectAttempt = ref(0)
 const reconnectTimer = ref<number | null>(null)
+
+function renderMarkdown(content: string): string {
+  const parsedContent = marked.parse(content, { async: false })
+  const sanitizedContent = DOMPurify.sanitize(parsedContent)
+  return sanitizedContent
+}
 
 function scrollToBottom() {
   setTimeout(() => {
@@ -216,7 +225,7 @@ function formatTimestamp(timestamp: string): string {
           <div class="timestamp">{{ formatTimestamp(message.timestamp) }}</div>
         </div>
         <!-- TODO: Fix rendering to display markdown -->
-        <div class="content">{{ message.content }}</div>
+        <div class="content" v-html="renderMarkdown(message.content)" />
       </div>
     </div>
     <div class="input">
