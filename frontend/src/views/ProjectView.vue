@@ -224,7 +224,6 @@ function formatTimestamp(timestamp: string): string {
           <div class="agent">@{{ message.agent_name }}</div>
           <div class="timestamp">{{ formatTimestamp(message.timestamp) }}</div>
         </div>
-        <!-- TODO: Fix rendering to display markdown -->
         <div class="content" v-html="renderMarkdown(message.content)" />
       </div>
     </div>
