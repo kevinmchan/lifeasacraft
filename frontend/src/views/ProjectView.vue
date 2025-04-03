@@ -5,6 +5,7 @@ import { useProjectStore } from '@/stores/project'
 import { type Agent, type Message, type Project } from '@/types'
 
 // TODO: Refactor to extract components and socket logic
+// TODO: Add additional logging
 
 const projectStore = useProjectStore()
 const user: Agent = {
@@ -111,7 +112,6 @@ function connectWebSocket(isReconnect = false) {
   socket.value.onclose = (event) => {
     console.log('WebSocket connection closed', event)
     connectionStatus.value = 'disconnected'
-    handleReconnect()
   }
 }
 

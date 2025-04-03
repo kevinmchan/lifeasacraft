@@ -1,4 +1,3 @@
-from typing import List
 import json
 import datetime
 
@@ -21,50 +20,46 @@ llm_client = OpenAI()
 
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: List[WebSocket] = []
+        self.active_connections: dict[str, list[WebSocket]] = {}
 
-    async def connect(self, websocket: WebSocket):
+    async def connect(self, project_id: str, websocket: WebSocket):
         await websocket.accept()
-        self.active_connections.append(websocket)
+        if project_id not in self.active_connections:
+            self.active_connections[project_id] = []
+        self.active_connections[project_id].append(websocket)
 
-    async def disconnect(self, websocket: WebSocket, code: int = 1000):
+    def remove_connection(self, project_id: str, websocket: WebSocket):
+        if project_id in self.active_connections:
+            try:
+                self.active_connections[project_id].remove(websocket)
+            except ValueError:
+                print(
+                    f"WebSocket not found in active connections for project {project_id}"
+                )
+            # Clean up if no active connections left
+            if not self.active_connections[project_id]:
+                del self.active_connections[project_id]
+        else:
+            print(f"Project ID {project_id} not found in active connections.")
+
+    async def disconnect(self, project_id: str, websocket: WebSocket, code: int = 1000):
         try:
             await websocket.close(code=code)
         except RuntimeError as e:
-            # Connection is already closed, just log it
-            if "already completed" in str(e) or "websocket.close" in str(e):
-                print("Info: Connection was already closed")
-            else:
-                # Some other RuntimeError
-                print(f"Error closing websocket: {e}")
+            print(f"Error closing websocket: {e}")
 
-        # Always remove from active connections
-        if websocket in self.active_connections:
-            self.active_connections.remove(websocket)
+        self.remove_connection(project_id, websocket)
 
-    async def send_personal_message(self, message: str, websocket: WebSocket):
-        await websocket.send_text(message)
-
-    async def broadcast(self, message: str):
-        # Keep track of connections to remove
-        closed_connections: list[WebSocket] = []
-
-        # Try sending to each connection
-        for connection in self.active_connections:
+    async def broadcast(self, project_id: str, message: str):
+        for connection in self.active_connections[project_id]:
             try:
                 await connection.send_text(message)
             except RuntimeError as e:
+                print(
+                    f"Error: In project {project_id} attempting to send message: {message}\nFailed with error: {e}"
+                )
                 if "close message has been sent" in str(e):
-                    # Connection is already closed
-                    closed_connections.append(connection)
-                else:
-                    # Some other RuntimeError
-                    print(f"Error sending message: {e}")
-
-        # Remove closed connections
-        for connection in closed_connections:
-            if connection in self.active_connections:
-                self.active_connections.remove(connection)
+                    self.remove_connection(project_id, connection)
 
 
 manager = ConnectionManager()
@@ -74,7 +69,7 @@ manager = ConnectionManager()
 async def websocket_endpoint(
     *, websocket: WebSocket, project_id: str, db: Session = Depends(get_db)
 ):
-    await manager.connect(websocket)
+    await manager.connect(project_id, websocket)
 
     # Load project data
     db_project = read_project(db, project_id)
@@ -86,9 +81,18 @@ async def websocket_endpoint(
             "code": "not_found",
             "message": f"Project with ID {project_id} not found",
         }
-        await websocket.send_json(error_message)
+        try:
+            await websocket.send_json(error_message)
+        except RuntimeError as e:
+            print(
+                f"Error: In project {project_id} attempting to send message: {error_message}\nFailed with error: {e}"
+            )
+            if "close message has been sent" in str(e):
+                manager.remove_connection(project_id, websocket)
+                return
+
         # Close connection
-        await manager.disconnect(websocket)
+        await manager.disconnect(project_id, websocket)
         return
 
     project = ProjectRead.model_validate(db_project)
@@ -107,13 +111,20 @@ async def websocket_endpoint(
             messages.append(message)
 
             # Send acknowledgment
-            await websocket.send_json(
-                {
-                    "type": "receipt",
-                    "status": "received",
-                    "timestamp": datetime.datetime.now().isoformat(),
-                }
-            )
+            receipt_message = {
+                "type": "receipt",
+                "status": "received",
+                "timestamp": datetime.datetime.now().isoformat(),
+            }
+            try:
+                await websocket.send_json(receipt_message)
+            except RuntimeError as e:
+                print(
+                    f"Error: In project {project_id} attempting to send message: {receipt_message}\nFailed with error: {e}"
+                )
+                if "close message has been sent" in str(e):
+                    manager.remove_connection(project_id, websocket)
+                    return
 
             # Get response from OpenAI
             # TODO: extract completions logic from endpoint logic
@@ -146,8 +157,7 @@ async def websocket_endpoint(
             messages.append(message)
 
             # Broadcast the assistant message to all clients
-            await manager.broadcast(message.model_dump_json())
+            await manager.broadcast(project_id, message.model_dump_json())
 
     except WebSocketDisconnect:
-        # TODO: Consider refactoring so we're not trying to close the already closed connection and just remove from active list
-        await manager.disconnect(websocket)
+        manager.remove_connection(project_id, websocket)

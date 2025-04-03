@@ -9,6 +9,10 @@ export const useProjectStore = defineStore('projects', () => {
   const error = ref<string | null>(null)
 
   // Fetch all projects
+  // TODO: Update data model on server and client to only fetch project metadata
+  // and not the entire project; we can't rely on cached project data e.g. the
+  // project may have received new messages since the initial fetchProjects and
+  // so we should fetch the entire project by id every time we call getProject
   async function fetchProjects() {
     // Skip if we've already loaded all projects
     if (hasLoadedAll.value) return projects.value
