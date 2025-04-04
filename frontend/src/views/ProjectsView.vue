@@ -36,6 +36,7 @@ onMounted(async () => {
             tabindex="0"
           >
             <div class="project-title">{{ project.title }}</div>
+            <!-- TODO: Handle truncating long intentions -->
             <div class="project-intention">{{ project.intention }}</div>
           </div>
         </router-link>

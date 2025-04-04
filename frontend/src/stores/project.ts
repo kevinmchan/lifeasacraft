@@ -5,7 +5,6 @@ import type { Project } from '@/types'
 export const useProjectStore = defineStore('projects', () => {
   const projects = ref<Project[]>([])
   const isLoading = ref(false)
-  const hasLoadedAll = ref(false)
   const error = ref<string | null>(null)
 
   // Fetch all projects
@@ -14,9 +13,6 @@ export const useProjectStore = defineStore('projects', () => {
   // project may have received new messages since the initial fetchProjects and
   // so we should fetch the entire project by id every time we call getProject
   async function fetchProjects() {
-    // Skip if we've already loaded all projects
-    if (hasLoadedAll.value) return projects.value
-
     isLoading.value = true
     error.value = null
 
@@ -24,7 +20,6 @@ export const useProjectStore = defineStore('projects', () => {
       const response = await fetch('http://localhost:8000/project/all')
       if (!response.ok) throw new Error(`HTTP error: ${response.status}`)
       projects.value = await response.json()
-      hasLoadedAll.value = true
       return projects.value
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Unknown error'
@@ -35,20 +30,44 @@ export const useProjectStore = defineStore('projects', () => {
     }
   }
 
-  // Get a project by ID (with optional fetch if not found)
+  // Get a project by ID
   async function getProject(id: string): Promise<Project | null> {
-    // First check if we already have it
-    const existingProject = projects.value.find((p) => p.id === id)
-    if (existingProject) return existingProject
+    // TODO: Stop getting all projects every time we want to get a project
+    // and instead just get the project by id
+    await fetchProjects()
+    return projects.value.find((p) => p.id === id) || null
+  }
 
-    // If we haven't loaded all projects yet, do that now
-    if (!hasLoadedAll.value) {
-      await fetchProjects()
-      return projects.value.find((p) => p.id === id) || null
+  async function createProject(projectData: {
+    title: string
+    intention: string
+    parentProjectId: string | null
+  }) {
+    isLoading.value = true
+    error.value = null
+
+    try {
+      const response = await fetch('http://localhost:8000/project/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: projectData.title,
+          intention: projectData.intention,
+          parent_project_id: projectData.parentProjectId,
+        }),
+      })
+      if (!response.ok) throw new Error(`HTTP error: ${response.status}`)
+      const newProject = await response.json()
+      projects.value.push(newProject)
+      return newProject
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Unknown error'
+      throw err
+    } finally {
+      isLoading.value = false
     }
-
-    // We've loaded all projects but didn't find this one
-    return null
   }
 
   return {
@@ -57,6 +76,6 @@ export const useProjectStore = defineStore('projects', () => {
     error,
     fetchProjects,
     getProject,
-    hasLoadedAll,
+    createProject,
   }
 })
