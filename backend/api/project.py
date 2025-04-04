@@ -6,7 +6,7 @@ from db.session import get_db
 from crud.project import create_project
 from schemas.project import ProjectRead, ProjectCreate
 from schemas.message import Message as MessageRead, MessageCreate
-from crud.project import add_message
+from crud.project import create_message
 
 router = APIRouter(prefix="/project", tags=["project"])
 
@@ -34,8 +34,8 @@ def create_project_endpoint(project: ProjectCreate, db: Session = Depends(get_db
 
 
 @router.post("/{id}/message", response_model=MessageRead)
-def add_message_endpoint(
+def create_message_endpoint(
     id: str, message: MessageCreate, db: Session = Depends(get_db)
 ):
-    message_response = add_message(db, project_id=id, message=message)
+    message_response = create_message(db, project_id=id, message=message)
     return message_response

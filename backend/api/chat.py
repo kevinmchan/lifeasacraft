@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from schemas.message import MessageCreate, MessageRead
 from schemas.project import ProjectRead
-from crud.project import read_project, add_message
+from crud.project import read_project, create_message
 from db.session import get_db
 from openai import OpenAI
 from dotenv import load_dotenv
@@ -106,7 +106,7 @@ async def websocket_endpoint(
             message_data = MessageCreate.model_validate(json.loads(data))
 
             # Add received message to conversation
-            db_message = add_message(db, project_id, message_data)
+            db_message = create_message(db, project_id, message_data)
             message = MessageRead.model_validate(db_message)
             messages.append(message)
 
@@ -152,7 +152,7 @@ async def websocket_endpoint(
                 agent_model="o3-mini",
                 timestamp=datetime.datetime.now(datetime.timezone.utc),
             )
-            db_message = add_message(db, project_id, message_data)
+            db_message = create_message(db, project_id, message_data)
             message = MessageRead.model_validate(db_message)
             messages.append(message)
 

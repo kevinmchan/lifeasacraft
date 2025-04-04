@@ -25,7 +25,7 @@ def create_project(db: Session, project: ProjectCreate) -> Project:
     return db_project
 
 
-def add_message(db: Session, project_id: str, message: MessageCreate) -> Message:
+def create_message(db: Session, project_id: str, message: MessageCreate) -> Message:
     """Add a message to a project"""
     message_id = str(uuid.uuid4())
     if message.agent_role == "user":
