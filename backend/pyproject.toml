@@ -1,0 +1,21 @@
+[project]
+name = "backend"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "alembic>=1.15.2",
+    "fastapi[standard]>=0.115.11",
+    "openai>=1.68.2",
+    "python-dotenv>=1.0.1",
+    "sqlmodel>=0.0.24",
+]
+
+[dependency-groups]
+dev = [
+    "black>=25.1.0",
+]
+notebooks = [
+    "ipykernel>=6.29.5",
+]
